@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                sh '''
+                    cd Test2
+                    mkdir -p ../classes
+                    find src -name "*.java" > sources.txt
+                    javac -encoding UTF-8 -d ../classes @sources.txt
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh '''
+                    cd Test2
+                    java -jar ../lib/junit-platform-console-standalone-*.jar \
+                         --class-path ../classes \
+                         --scan-class-path \
+                         --details theme=ascii \
+                         --reports-dir ../test-reports
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'test-reports/**/*.xml'
+            archiveArtifacts artifacts: 'test-reports/**/*.xml', allowEmptyArchive: true
+        }
+
+        success {
+            echo '✅ Build and test succeeded!'
+        }
+
+        failure {
+            echo '❌ Build or test failed!'
+        }
+    }
+}
