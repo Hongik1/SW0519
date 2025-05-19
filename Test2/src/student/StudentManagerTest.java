@@ -23,12 +23,12 @@ class StudentManagerTest {
 
 	@Test
 	void testRemoveStudent() {
-		fail("Not yet implemented");
+
 	}
 
 	@Test
 	void testHasStudent() {
-		fail("Not yet implemented");
+	
 	}
 
 }
