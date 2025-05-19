@@ -21,7 +21,7 @@ pipeline {
                     mkdir -p ${CLASS_DIR}
                     mkdir -p ${REPORT_DIR}
                     mkdir -p lib
-                    echo "[+] Downloading JUnit JAR"
+                    echo "[+] Downloading JUnit JAR..."
                     curl -L -o ${JUNIT_JAR_PATH} ${JUNIT_JAR_URL}
                 '''
             }
@@ -41,15 +41,16 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                echo "[+] Running tests with JUnit..."
-                java -jar ${JUNIT_JAR_PATH} \
-                     --class-path ${CLASS_DIR} \
-                     --scan-class-path \
-                     --details=tree \
-                     --details-theme=ascii \
-                     --reports-dir ${REPORT_DIR} \
-                     --report-type=xml \
-                     > ${REPORT_DIR}/test-output.txt
+                    echo "[+] Running tests with JUnit..."
+                    java -jar ${JUNIT_JAR_PATH} \
+                         --class-path ${CLASS_DIR} \
+                         --scan-class-path \
+                         --details=tree \
+                         --details-theme=ascii \
+                         --reports-dir ${REPORT_DIR} \
+                         --config=junit.platform.output.capture.stdout=true \
+                         --config=junit.platform.reporting.open.xml.enabled=true \
+                         > ${REPORT_DIR}/test-output.txt
                 '''
             }
         }
@@ -63,11 +64,11 @@ pipeline {
         }
 
         failure {
-            echo "Build or test failed!"
+            echo "❌ Build or test failed!"
         }
 
         success {
-            echo "Build and test succeeded!"
+            echo "✅ Build and test succeeded!"
         }
     }
 }
