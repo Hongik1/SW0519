@@ -1,10 +1,16 @@
 pipeline {
     agent any
 
+    environment {
+        JUNIT_JAR_URL = 'https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.7.1/junit-platform-console-standalone-1.7.1.jar'
+        JUNIT_JAR_PATH = 'lib/junit.jar'
+        CLASS_DIR = 'classes'
+        REPORT_DIR = 'test-reports'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                // 소스코드 체크아웃
                 checkout scm
             }
         }
@@ -12,9 +18,15 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    mkdir -p classes
-                    find Test2/src -name "*.java" > sources.txt
-                    javac -encoding UTF-8 -d classes @sources.txt
+                    cd Test2
+                    mkdir -p ../${CLASS_DIR} ../lib
+
+                    echo "[+] Downloading JUnit JAR..."
+                    curl -L -o ../${JUNIT_JAR_PATH} ${JUNIT_JAR_URL}
+
+                    echo "[+] Compiling source files..."
+                    find src -name "*.java" > sources.txt
+                    javac -encoding UTF-8 -d ../${CLASS_DIR} -cp ../${JUNIT_JAR_PATH} @sources.txt
                 '''
             }
         }
@@ -22,14 +34,13 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    mkdir -p lib
-                    curl -L -o lib/junit.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.7.1/junit-platform-console-standalone-1.7.1.jar
-                    
-                    java -jar lib/junit.jar \
-                        --class-path classes \
-                        --scan-class-path \
-                        --details theme=ascii \
-                        --reports-dir test-reports
+                    cd Test2
+                    echo "[+] Running tests with JUnit..."
+                    java -jar ../${JUNIT_JAR_PATH} \
+                         --class-path ../${CLASS_DIR} \
+                         --scan-class-path \
+                         --details theme=ascii \
+                         --reports-dir ../${REPORT_DIR}
                 '''
             }
         }
@@ -37,16 +48,17 @@ pipeline {
 
     post {
         always {
-            junit 'test-reports/**/*.xml'
-            archiveArtifacts artifacts: 'test-reports/**/*.xml', allowEmptyArchive: true
-        }
-
-        failure {
-            echo 'Build or test failed'
+            echo "[*] Archiving test results..."
+            junit "${REPORT_DIR}/**/*.xml"
+            archiveArtifacts artifacts: "${REPORT_DIR}/**/*", allowEmptyArchive: true
         }
 
         success {
-            echo 'Build and test succeeded'
+            echo '✅ Build and test succeeded!'
+        }
+
+        failure {
+            echo '❌ Build or test failed!'
         }
     }
 }
