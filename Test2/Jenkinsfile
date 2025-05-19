@@ -69,6 +69,9 @@ pipeline {
 
         success {
             echo "Build and test succeeded!"
+            mail to: 'bse07210@gmail.com',
+             subject: " [${env.JOB_NAME}] #${env.BUILD_NUMBER} 성공 알림",
+             body: "젠킨스 빌드 성공 \n\n링크: ${env.BUILD_URL}"
         }
     }
 }
