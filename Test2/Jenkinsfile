@@ -15,16 +15,23 @@ pipeline {
             }
         }
 
+        stage('Prepare') {
+            steps {
+                sh '''
+                    mkdir -p ${CLASS_DIR}
+                    mkdir -p ${REPORT_DIR}
+                    mkdir -p lib
+                    echo "[+] Downloading JUnit JAR..."
+                    curl -L -o ${JUNIT_JAR_PATH} ${JUNIT_JAR_URL}
+                '''
+            }
+        }
+
         stage('Build') {
             steps {
                 sh '''
-                    cd Test2
-                    mkdir -p ../${CLASS_DIR} ../lib
-
-                    echo "[+] Downloading JUnit JAR..."
-                    curl -L -o ../${JUNIT_JAR_PATH} ${JUNIT_JAR_URL}
-
                     echo "[+] Compiling source files..."
+                    cd Test2
                     find src -name "*.java" > sources.txt
                     javac -encoding UTF-8 -d ../${CLASS_DIR} -cp ../${JUNIT_JAR_PATH} @sources.txt
                 '''
@@ -34,13 +41,13 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    cd Test2
                     echo "[+] Running tests with JUnit..."
-                    java -jar ../${JUNIT_JAR_PATH} \
-                         --class-path ../${CLASS_DIR} \
+                    java -jar ${JUNIT_JAR_PATH} \
+                         --class-path ${CLASS_DIR} \
                          --scan-class-path \
-                         --details theme=ascii \
-                         --reports-dir ../${REPORT_DIR}
+                         --details=tree \
+                         --details-theme=ascii \
+                         --reports-dir ${REPORT_DIR}
                 '''
             }
         }
@@ -53,12 +60,12 @@ pipeline {
             archiveArtifacts artifacts: "${REPORT_DIR}/**/*", allowEmptyArchive: true
         }
 
-        success {
-            echo '✅ Build and test succeeded!'
+        failure {
+            echo "❌ Build or test failed!"
         }
 
-        failure {
-            echo '❌ Build or test failed!'
+        success {
+            echo "✅ Build and test succeeded!"
         }
     }
 }
