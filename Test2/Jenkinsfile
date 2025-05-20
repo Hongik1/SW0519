@@ -55,14 +55,6 @@ pipeline {
             }
         }
     }
-    stage('Deploy') {
-          steps {
-                sh '''
-                  mkdir -p deploy
-                  echo "<h1>🎉 배포 완료! ${BUILD_NUMBER}번 빌드</h1>" > deploy/index.html
-                '''
-          }
-        }
 
 
     post {
